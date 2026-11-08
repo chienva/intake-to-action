@@ -1,0 +1,1 @@
+Synthetic order: customer C-004, deliver in 20 days. Send 4 pieces of ABC-0004. Currency JPY.
