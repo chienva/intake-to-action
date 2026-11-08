@@ -1,0 +1,93 @@
+{
+    "description": "Synthetic order extraction",
+    "type": "object",
+    "properties": {
+        "outcome": {
+            "type": "string",
+            "enum": [
+                "extracted",
+                "rejected"
+            ]
+        },
+        "reject_reason": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "enum": [
+                "not_an_order",
+                "missing_required_fields",
+                "ambiguous",
+                "other",
+                null
+            ]
+        },
+        "customer_code": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "At most 16 bytes",
+            "pattern": "\\AC-[0-9]{3}\\z"
+        },
+        "requested_delivery_date": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "At most 10 bytes",
+            "pattern": "\\A[0-9]{4}-[0-9]{2}-[0-9]{2}\\z"
+        },
+        "currency": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "enum": [
+                "JPY",
+                "VND",
+                "USD",
+                null
+            ]
+        },
+        "line_items": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 50,
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "sku",
+                    "quantity",
+                    "unit"
+                ],
+                "properties": {
+                    "sku": {
+                        "type": "string",
+                        "description": "At most 16 bytes",
+                        "pattern": "\\A[A-Z]{3}-[0-9]{4}\\z"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "minimum": -9223372036854775808,
+                        "maximum": 9223372036854775807
+                    },
+                    "unit": {
+                        "type": "string",
+                        "description": "At most 8 bytes"
+                    }
+                }
+            }
+        }
+    },
+    "required": [
+        "outcome",
+        "reject_reason",
+        "customer_code",
+        "requested_delivery_date",
+        "currency",
+        "line_items"
+    ],
+    "additionalProperties": false
+}

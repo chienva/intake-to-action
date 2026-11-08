@@ -1,0 +1,1 @@
+Synthetic order: customer C-003, deliver in 15 days. Send 3 kg of ABC-0003. Currency USD.

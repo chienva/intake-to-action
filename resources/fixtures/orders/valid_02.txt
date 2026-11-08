@@ -1,0 +1,1 @@
+Synthetic order: customer C-002, deliver in 10 days. Send 2 boxes of ABC-0002. Currency VND.

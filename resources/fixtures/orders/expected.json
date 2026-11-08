@@ -1,0 +1,89 @@
+{
+  "valid_01.txt": {
+    "sha256": "372f6528366f77d45ec85474787d7a56d88d18ac39ef8f2f084c31a730d6fae3",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-001\",\"requested_delivery_date\":\"+5d\",\"currency\":\"JPY\",\"line_items\":[{\"sku\":\"ABC-0001\",\"quantity\":1,\"unit\":\"pcs\"}]}",
+    "status": "accepted_for_review",
+    "errors": []
+  },
+  "valid_02.txt": {
+    "sha256": "0b3fbfd2c0269f94503005035cb87126f9e2d916cbf9374d7fe1f35020deec4a",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-002\",\"requested_delivery_date\":\"+10d\",\"currency\":\"VND\",\"line_items\":[{\"sku\":\"ABC-0002\",\"quantity\":2,\"unit\":\"box\"}]}",
+    "status": "accepted_for_review",
+    "errors": []
+  },
+  "valid_03.txt": {
+    "sha256": "2aed3ece1b6dbab8aa5c7c11dabc56324dc9ac1b7e271d50ea7c3160fa468ab0",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-003\",\"requested_delivery_date\":\"+15d\",\"currency\":\"USD\",\"line_items\":[{\"sku\":\"ABC-0003\",\"quantity\":3,\"unit\":\"kg\"}]}",
+    "status": "accepted_for_review",
+    "errors": []
+  },
+  "valid_04.txt": {
+    "sha256": "2ca598d9c31f71a8da93ced5a3821a9508b4d6d14ba3132eb1695b431d62fddf",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-004\",\"requested_delivery_date\":\"+20d\",\"currency\":\"JPY\",\"line_items\":[{\"sku\":\"ABC-0004\",\"quantity\":4,\"unit\":\"pcs\"}]}",
+    "status": "accepted_for_review",
+    "errors": []
+  },
+  "valid_05.txt": {
+    "sha256": "4066385827922a8bd13d6d28f6343cebd741b287a3edde2ec3bc2ca51f3bdf1e",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-005\",\"requested_delivery_date\":\"+25d\",\"currency\":\"VND\",\"line_items\":[{\"sku\":\"ABC-0005\",\"quantity\":5,\"unit\":\"box\"}]}",
+    "status": "accepted_for_review",
+    "errors": []
+  },
+  "valid_06.txt": {
+    "sha256": "06fe77b7e8932804bfed58c603397f2a9e8ff0370143a5330ac286c29e928a9b",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-006\",\"requested_delivery_date\":\"+30d\",\"currency\":\"USD\",\"line_items\":[{\"sku\":\"ABC-0006\",\"quantity\":6,\"unit\":\"kg\"}]}",
+    "status": "accepted_for_review",
+    "errors": []
+  },
+  "not_an_order_01.txt": {
+    "sha256": "f547eb33bcce5456df622c8a204b7e206ea60bd2cf7de6ab00260306cb5ce3a9",
+    "raw": "{\"outcome\":\"rejected\",\"reject_reason\":\"not_an_order\",\"customer_code\":null,\"requested_delivery_date\":null,\"currency\":null,\"line_items\":[]}",
+    "status": "rejected_by_model",
+    "errors": []
+  },
+  "not_an_order_02.txt": {
+    "sha256": "d07b62f5d18f10b92d6aa88c3f39d1cc5d9f12480db4d081a2f633f57a992913",
+    "raw": "{\"outcome\":\"rejected\",\"reject_reason\":\"missing_required_fields\",\"customer_code\":null,\"requested_delivery_date\":null,\"currency\":null,\"line_items\":[]}",
+    "status": "rejected_by_model",
+    "errors": []
+  },
+  "not_an_order_03.txt": {
+    "sha256": "f8be4003804899cea6cc8a7d4fc26bdb4247cb99ae73b8d965cc004e68d7c628",
+    "raw": "{\"outcome\":\"rejected\",\"reject_reason\":\"ambiguous\",\"customer_code\":null,\"requested_delivery_date\":null,\"currency\":null,\"line_items\":[]}",
+    "status": "rejected_by_model",
+    "errors": []
+  },
+  "defect_past_date_01.txt": {
+    "sha256": "bf179ecb461be96d87c3d6d42b4f9bc6efe6daeb58d0988eeba1124070cd9a50",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-001\",\"requested_delivery_date\":\"-1d\",\"currency\":\"JPY\",\"line_items\":[{\"sku\":\"ABC-0001\",\"quantity\":1,\"unit\":\"pcs\"}]}",
+    "status": "rejected_by_validation",
+    "errors": [
+      {
+        "code": "date_in_past",
+        "path": "$.requested_delivery_date"
+      }
+    ]
+  },
+  "defect_unknown_sku_01.txt": {
+    "sha256": "207efd07b6d5ff5c77499b7cdb38f2751e148b666f06edcdd5df76ddad74caa7",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-001\",\"requested_delivery_date\":\"+5d\",\"currency\":\"JPY\",\"line_items\":[{\"sku\":\"ZZZ-9999\",\"quantity\":1,\"unit\":\"pcs\"}]}",
+    "status": "rejected_by_validation",
+    "errors": [
+      {
+        "code": "sku_unknown",
+        "path": "$.line_items.0.sku"
+      }
+    ]
+  },
+  "defect_zero_qty_01.txt": {
+    "sha256": "4bb3f940fc755970e21aa6afb20dd184a56745ff02cb9cdb71b92a6bbfed8e35",
+    "raw": "{\"outcome\":\"extracted\",\"reject_reason\":null,\"customer_code\":\"C-001\",\"requested_delivery_date\":\"+5d\",\"currency\":\"JPY\",\"line_items\":[{\"sku\":\"ABC-0001\",\"quantity\":0,\"unit\":\"pcs\"}]}",
+    "status": "rejected_by_validation",
+    "errors": [
+      {
+        "code": "quantity_out_of_range",
+        "path": "$.line_items.0.quantity"
+      }
+    ]
+  }
+}
