@@ -6,11 +6,11 @@ use Illuminate\Filesystem\Filesystem;
 require_once dirname(__DIR__).'/LabProcesses.php';
 
 beforeEach(function () {
-    $this->labDirectories = [];
+    $GLOBALS['labDirectories'] = [];
 });
 
 afterEach(function () {
-    foreach ($this->labDirectories as $directory) {
+    foreach ($GLOBALS['labDirectories'] as $directory) {
         (new Filesystem)->deleteDirectory($directory);
     }
 });
@@ -102,9 +102,9 @@ test('Composer preflight refuses before package discovery and documents the no-s
 
 test('setup refuses hostile env in a fresh clone before Composer creates vendor', function () {
     $directory = sys_get_temp_dir().'/intake-t2-fresh-'.bin2hex(random_bytes(8));
-    $this->labDirectories[] = $directory;
+    $GLOBALS['labDirectories'][] = $directory;
     $root = dirname(__DIR__, 2);
-    expect(labProcess(['git', 'clone', '--quiet', '--local', $root, $directory], $root)[0])->toBe(0);
+    expect(labProcess(['git', 'clone', '--quiet', '--local', '--no-hardlinks', $root, $directory], $root)[0])->toBe(0);
     $head = trim(labProcess(['git', 'rev-parse', 'HEAD'], $root)[1]);
     expect(trim(labProcess(['git', 'rev-parse', 'HEAD'], $directory)[1]))->toBe($head);
     file_put_contents($directory.'/.env', "APP_ENV=production\n");
@@ -116,7 +116,7 @@ test('codex check reports each base refusal before other checks', function (stri
     $directory = labCopy();
     $root = dirname(__DIR__, 2);
     // The script must run against a real checkout, preserving this branch's HEAD.
-    expect(labProcess(['git', 'clone', '--quiet', '--local', $root, $directory.'/checkout'], $root)[0])->toBe(0);
+    expect(labProcess(['git', 'clone', '--quiet', '--local', '--no-hardlinks', $root, $directory.'/checkout'], $root)[0])->toBe(0);
     $checkout = $directory.'/checkout';
     $head = trim(labProcess(['git', 'rev-parse', 'HEAD'], $checkout)[1]);
     $environment = ['CODEX_REMOTE' => '/nonexistent', 'EXPECTED_BASE' => $head];

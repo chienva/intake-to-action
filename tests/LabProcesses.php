@@ -41,7 +41,7 @@ function labCopy(bool $vendor = false): string
         symlink($root.'/vendor', $temp.'/vendor');
     }
     file_put_contents($temp.'/.env', "APP_ENV=local\nAPP_DEBUG=false\nDB_CONNECTION=sqlite\n");
-    test()->labDirectories[] = $temp;
+    $GLOBALS['labDirectories'][] = $temp;
 
     return $temp;
 }
