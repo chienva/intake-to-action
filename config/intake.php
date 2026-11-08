@@ -6,5 +6,6 @@ return [
         'provider' => env('INTAKE_PROVIDER'),
         'model' => env('INTAKE_MODEL'),
         'timeout_seconds' => env('INTAKE_TIMEOUT', 20),
+        'provider_options' => [],
     ],
 ];
