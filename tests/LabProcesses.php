@@ -23,9 +23,16 @@ function labCopy(bool $vendor = false): string
     $temp = sys_get_temp_dir().'/intake-t2-test-'.bin2hex(random_bytes(8));
     mkdir($temp);
     $files = new Filesystem;
-    foreach (['app', 'bootstrap', 'config', 'database', 'public', 'resources', 'routes', 'scripts', 'storage'] as $directory) {
+    foreach (['app', 'bootstrap', 'config', 'database', 'public', 'resources', 'routes', 'scripts'] as $directory) {
         $files->copyDirectory($root.'/'.$directory, $temp.'/'.$directory);
     }
+    mkdir($temp.'/storage');
+    foreach ($files->directories($root.'/storage') as $directory) {
+        if (basename($directory) !== 'logs') {
+            $files->copyDirectory($directory, $temp.'/storage/'.basename($directory));
+        }
+    }
+    mkdir($temp.'/storage/logs');
     foreach (glob($temp.'/bootstrap/cache/*.php') as $file) {
         unlink($file);
     }

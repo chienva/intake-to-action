@@ -9,5 +9,6 @@ class LabSeeder extends Seeder
     public function run(): void
     {
         $this->call(CatalogueSeeder::class);
+        $this->call(OperatorSeeder::class);
     }
 }
