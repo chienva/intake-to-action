@@ -1,0 +1,1 @@
+intake_token() { local t rc; t="$(php artisan intake:issue-token owner@example.test --ttl-days=1)"; rc=$?; if [ "$rc" -ne 0 ] || [ -z "$t" ]; then unset INTAKE_TOKEN; echo "token-FAILED rc=$rc" >&2; return 1; fi; export INTAKE_TOKEN="$t"; echo token-set; }
