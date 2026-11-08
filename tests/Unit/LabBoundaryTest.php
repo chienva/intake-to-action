@@ -46,11 +46,11 @@ test('preflight refuses unsafe process and file configurations', function (array
 test('preflight accepts the example and missing canonical database', function () {
     $directory = labCopy();
     copy($directory.'/.env.example', $directory.'/.env');
-    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory))->toBe([0, '']);
+    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory))->toBe([0, '', '']);
     file_put_contents($directory.'/.env', 'APP_ENV=${UNTRUSTED}'."\nAPP_ENV='local' # final assignment wins\nDB_CONNECTION=\"sqlite\"\n");
-    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory))->toBe([0, '']);
-    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory, ['DB_DATABASE' => $directory.'/database/database.sqlite']))->toBe([0, '']);
-    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory, ['APP_ENV' => 'testing', 'DB_DATABASE' => ':memory:']))->toBe([0, '']);
+    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory))->toBe([0, '', '']);
+    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory, ['DB_DATABASE' => $directory.'/database/database.sqlite']))->toBe([0, '', '']);
+    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory, ['APP_ENV' => 'testing', 'DB_DATABASE' => ':memory:']))->toBe([0, '', '']);
 });
 
 test('lab guard and boot provider refuse unsafe runtime configuration', function (string $environment, string $driver, string $path, bool $symlink, string $reason) {
@@ -74,7 +74,7 @@ test('lab guard and boot provider refuse unsafe runtime configuration', function
 
 test('lab guard accepts local canonical path before database creation', function () {
     $directory = labCopy();
-    expect(labProcess(['php', 'artisan', 'intake:lab-guard'], $directory))->toBe([0, '']);
+    expect(labProcess(['php', 'artisan', 'intake:lab-guard'], $directory))->toBe([0, '', '']);
     expect(LabPolicy::validDatabase(':memory:', 'local', $directory))->toBeFalse();
     expect(LabPolicy::validDatabase(':memory:', 'testing', $directory))->toBeTrue();
 });
@@ -82,13 +82,15 @@ test('lab guard accepts local canonical path before database creation', function
 test('HTTP entrypoint refuses production at boot', function () {
     $directory = labCopy();
     file_put_contents($directory.'/.env', "APP_ENV=production\nAPP_DEBUG=false\nDB_CONNECTION=sqlite\n");
-    [$code, $output] = labProcess(['php', 'public/index.php'], $directory, ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/up']);
+    [$code, $stdout, $stderr] = labProcess(['php', 'public/index.php'], $directory, ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/up']);
     expect($code)->toBe(0);
-    expect(trim($output))->toBe('REFUSED: environment');
+    expect(trim($stdout.$stderr))->toBe('REFUSED: environment');
     // Verify the response status produced by the actual HTTP entrypoint as a process.
     $probe = $directory.'/http-status.php';
     file_put_contents($probe, '<?php register_shutdown_function(function () { fwrite(STDERR, "STATUS=".http_response_code()); }); require __DIR__."/public/index.php";');
-    expect(labProcess(['php', $probe], $directory, ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/up'])[1])->toContain('STATUS=503');
+    $response = labProcess(['php', $probe], $directory, ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/up']);
+    expect($response[0])->toBe(0);
+    expect($response[1].$response[2])->toContain('STATUS=503');
 });
 
 test('Composer preflight refuses before package discovery and documents the no-scripts boundary', function () {
@@ -96,7 +98,7 @@ test('Composer preflight refuses before package discovery and documents the no-s
     file_put_contents($directory.'/.env', "APP_ENV=production\n");
     $result = labProcess(['composer', 'dump-autoload'], $directory);
     labExpected($result, 1, 'REFUSED: environment');
-    expect($result[1])->not->toContain('artisan package:discover');
+    expect($result[1].$result[2])->not->toContain('artisan package:discover');
     $bypass = labProcess(['composer', 'dump-autoload', '--no-scripts'], $directory);
     expect($bypass[0])->toBe(0);
     fwrite(STDOUT, "documented Composer boundary: expected=0, observed={$bypass[0]}, PASS\n");
@@ -110,7 +112,7 @@ test('setup refuses hostile env in a fresh clone before Composer creates vendor'
     $head = trim(labProcess(['git', 'rev-parse', 'HEAD'], $root)[1]);
     expect(trim(labProcess(['git', 'rev-parse', 'HEAD'], $directory)[1]))->toBe($head);
     file_put_contents($directory.'/.env', "APP_ENV=production\n");
-    labExpected(labProcess(['bash', 'scripts/codex-setup.sh'], $directory), 1, 'REFUSED: environment', true);
+    labExpected(labProcess(['bash', 'scripts/codex-setup.sh'], $directory), 1, 'REFUSED: environment');
     expect(is_dir($directory.'/vendor'))->toBeFalse();
 });
 
@@ -138,7 +140,7 @@ test('codex check reports each base refusal before other checks', function (stri
             $environment['EXPECTED_BASE'] = false;
         }
     }
-    labExpected(labProcess(['bash', 'scripts/codex-check.sh'], $checkout, $environment), 69, 'BLOCKED: '.$reason);
+    labExpected(labProcess(['bash', 'scripts/codex-check.sh'], $checkout, $environment), 69, 'BLOCKED: '.$reason, true, true);
 })->with([
     'missing remote' => ['missing', 'base-unverified'],
     'remote ahead' => ['behind', 'base-behind'],

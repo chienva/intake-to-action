@@ -14,7 +14,7 @@ function labProcess(array $command, string $cwd, array $environment = []): array
     $process->setTimeout(120);
     $process->run();
 
-    return [$process->getExitCode(), $process->getOutput().$process->getErrorOutput()];
+    return [$process->getExitCode(), $process->getOutput(), $process->getErrorOutput()];
 }
 
 function labCopy(bool $vendor = false): string
@@ -46,15 +46,27 @@ function labCopy(bool $vendor = false): string
     return $temp;
 }
 
-function labExpected(array $result, int $expected, string $message, bool $exact = false): void
+function labExpected(array $result, int $expected, string $message, bool $exact = false, bool $diagnosticStderr = false): void
 {
-    [$observed, $output] = $result;
-    $matches = $observed === $expected && ($exact ? trim($output) === $message : str_contains($output, $message));
+    [$observed, $stdout, $stderr] = $result;
+    $line = str_replace("\r\n", "\n", $stdout);
+    if (str_ends_with($line, "\n")) {
+        $line = substr($line, 0, -1);
+    }
+    $stderrMatches = $diagnosticStderr ? ! str_contains($stderr, $message) : $stderr === '';
+    $matches = $observed === $expected && ($exact
+        ? $line === $message && $stderrMatches
+        : str_contains($stdout.$stderr, $message));
     fwrite(STDOUT, "expected={$expected}, observed={$observed}, ".($matches ? 'PASS' : 'FAIL')." [{$message}]\n");
     expect($observed)->toBe($expected);
     if ($exact) {
-        expect(trim($output))->toBe($message);
+        expect($line)->toBe($message);
+        if ($diagnosticStderr) {
+            expect($stderr)->not->toContain($message);
+        } else {
+            expect($stderr)->toBe('');
+        }
     } else {
-        expect($output)->toContain($message);
+        expect($stdout.$stderr)->toContain($message);
     }
 }
