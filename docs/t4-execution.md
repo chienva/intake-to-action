@@ -18,6 +18,8 @@ can use `php artisan intake:run-state <request_id>` for an independent read.
 
 ## Implementation choices
 
+- Timeout normalization converts ASCII digit strings to integers; other strings
+  retain their value for exact-key validation against the integer range 1–120.
 - ExtractionContext contains requestId and nullable userId. ExtractionGateway is
   an interface in App\Domain\Extraction. No T3 DTO constructors were changed.
 - FakeExtractionGateway hashes fixture text to find the existing expected.json

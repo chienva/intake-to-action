@@ -2,6 +2,44 @@
 
 use App\Domain\Extraction\InvalidIntakeConfiguration;
 use App\Support\IntakeConfigValidator;
+use Illuminate\Support\Env;
+
+test('timeout environment normalization preserves strict validation', function (?string $value, mixed $normalized, bool $valid) {
+    $repository = Env::getRepository();
+    $previous = $repository->get('INTAKE_TIMEOUT');
+    if ($value === null) {
+        $repository->clear('INTAKE_TIMEOUT');
+    } else {
+        $repository->set('INTAKE_TIMEOUT', $value);
+    }
+    try {
+        $config = require __DIR__.'/../../config/intake.php';
+        expect($config['extraction']['timeout_seconds'])->toBe($normalized);
+        $config['extraction'] = array_replace($config['extraction'], ['gateway' => 'prism', 'provider' => 'openai', 'model' => 'test-model']);
+        $validator = new IntakeConfigValidator;
+        if ($valid) {
+            $validator->validate($config['extraction'], 'local');
+            expect(true)->toBeTrue();
+        } else {
+            try {
+                $validator->validate($config['extraction'], 'local');
+                test()->fail('Expected configuration rejection');
+            } catch (InvalidIntakeConfiguration $exception) {
+                expect($exception->getMessage())->toBe('intake.extraction.timeout_seconds');
+            }
+        }
+    } finally {
+        if ($previous === null) {
+            $repository->clear('INTAKE_TIMEOUT');
+        } else {
+            $repository->set('INTAKE_TIMEOUT', $previous);
+        }
+    }
+})->with([
+    [null, 20, true], ['20', 20, true], ['1', 1, true], ['120', 120, true],
+    ['0', 0, false], ['121', 121, false], ['abc', 'abc', false],
+    ['20.5', '20.5', false], [' 20', ' 20', false], ['-5', '-5', false], ['', '', false],
+]);
 
 test('intake config fails closed with exactly the config key', function (array $overrides, string $environment, string $key) {
     $base = ['gateway' => 'prism', 'provider' => 'openai', 'model' => 'synthetic', 'timeout_seconds' => 20, 'provider_options' => []];
