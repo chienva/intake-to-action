@@ -15,7 +15,7 @@ R3 Run every command so its exit code is visible and record it. Never hide a fai
 
 R3a An expected-failure check is only one the released prompt names with its expected non-zero exit code and expected message. Run it as a single command, read `$?` in the very next shell command, and record expected and observed exit codes and messages with PASS or FAIL. PASS only on an exact match; anything else, including exit 0, is FAIL.
 
-R4 Use only the published environment's php and composer. `command -v php composer` must print `/home/agent/.local/bin/php` and `/home/agent/.local/bin/composer`; otherwise print `BLOCKED: runtime` and stop. Never substitute Docker images, downloaded binaries or any other runtime. Stop and report evidence if a change outside the task's allowed files is needed, a check can pass only by weakening it, an instruction seems contradictory, or any network operation fails. No workarounds.
+R4 Stop and report with evidence if php or composer is not the published environment's (command -v php composer must print /home/agent/.local/bin/php and /home/agent/.local/bin/composer; otherwise print "BLOCKED: runtime" and never substitute Docker images, downloaded binaries or any other runtime), if a change outside the task's allowed files is needed, if a dependency needs PHP > 8.3, an installed API differs from the task's contract, a check can pass only by weakening it, an instruction seems contradictory, or any network operation fails. No workarounds: no proxies, mirrors, TLS changes, vendor patches.
 
 R5 Never print environment variables, tokens or secrets. Never log or print document_text, prompts, model output, exception messages, tokens or keys. Use only fixed refusal diagnostics specified by the contract.
 

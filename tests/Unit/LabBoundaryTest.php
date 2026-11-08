@@ -112,7 +112,7 @@ test('setup refuses hostile env in a fresh clone before Composer creates vendor'
     $head = trim(labProcess(['git', 'rev-parse', 'HEAD'], $root)[1]);
     expect(trim(labProcess(['git', 'rev-parse', 'HEAD'], $directory)[1]))->toBe($head);
     file_put_contents($directory.'/.env', "APP_ENV=production\n");
-    labExpected(labProcess(['bash', 'scripts/codex-setup.sh'], $directory), 1, 'REFUSED: environment');
+    labExpected(labProcess(['bash', 'scripts/codex-setup.sh'], $directory), 1, 'REFUSED: environment', true);
     expect(is_dir($directory.'/vendor'))->toBeFalse();
 });
 
