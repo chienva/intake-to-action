@@ -71,9 +71,6 @@ if (file_exists($env)) {
             continue;
         }
         $value = trim($match[2]);
-        if (str_contains($value, '${')) {
-            $refuse('env-file');
-        }
         if (str_starts_with($value, '"') || str_starts_with($value, "'")) {
             $quote = $value[0];
             $pattern = $quote === '"' ? '/^"((?:[^"\\\\]|\\\\.)*)"\s*(?:#.*)?$/' : "/^'([^']*)'\\s*(?:#.*)?$/";
@@ -88,6 +85,11 @@ if (file_exists($env)) {
             }
         }
         $values[$key] = $value;
+    }
+}
+foreach ($values as $value) {
+    if (str_contains($value, '${')) {
+        $refuse('env-file');
     }
 }
 $check($values, $process['APP_ENV'] ?? $values['APP_ENV'] ?? null);

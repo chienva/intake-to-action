@@ -47,6 +47,8 @@ test('preflight accepts the example and missing canonical database', function ()
     $directory = labCopy();
     copy($directory.'/.env.example', $directory.'/.env');
     expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory))->toBe([0, '']);
+    file_put_contents($directory.'/.env', 'APP_ENV=${UNTRUSTED}'."\nAPP_ENV='local' # final assignment wins\nDB_CONNECTION=\"sqlite\"\n");
+    expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory))->toBe([0, '']);
     expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory, ['DB_DATABASE' => $directory.'/database/database.sqlite']))->toBe([0, '']);
     expect(labProcess(['php', 'scripts/lab-preflight.php'], $directory, ['APP_ENV' => 'testing', 'DB_DATABASE' => ':memory:']))->toBe([0, '']);
 });
