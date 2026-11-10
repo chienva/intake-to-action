@@ -33,10 +33,10 @@ Run steps 1–5 and 7–12 in the first terminal. Step 6 runs in a second termin
 4. Confirm the fake gateway before any request:
 
    ```bash
-   grep -E '^INTAKE_GATEWAY=' .env
+   v=$(grep -E '^INTAKE_GATEWAY=' .env); if [ "$v" = "INTAKE_GATEWAY=fake" ]; then echo "$v"; else echo "FAIL: gateway check" >&2; false; fi
    ```
 
-   Expected: exactly `INTAKE_GATEWAY=fake`. If it prints anything else or nothing, stop and do not continue with any request.
+   Expected: prints `INTAKE_GATEWAY=fake`, exit 0. Otherwise stderr prints `FAIL: gateway check`, exit 1; stop and do not send any request. The check leaves the terminal open.
 
 5. Run the suite:
 
@@ -52,7 +52,7 @@ Run steps 1–5 and 7–12 in the first terminal. Step 6 runs in a second termin
    INTAKE_GATEWAY=fake php artisan serve --port=8000
    ```
 
-   Expected: the development server starts on port 8000 and remains running.
+   Expected: the terminal shows a line containing `INFO Server running on [http://127.0.0.1:8000].` If that line does not appear, if any other port appears (including 8001), or if an error such as address already in use appears, stop the server with Ctrl+C, mark Step 6 BLOCKED, and do not continue to Step 7 or send any request until port 8000 is free.
 
 7. Back in the first terminal, obtain a short-lived owner token using the supplied helper:
 
@@ -78,29 +78,29 @@ Run steps 1–5 and 7–12 in the first terminal. Step 6 runs in a second termin
 
    ```bash
    curl --disable -sS -o /tmp/out.json -w '%{http_code}\n' -H "Authorization: Bearer $INTAKE_TOKEN" -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary @/tmp/req_valid.json http://127.0.0.1:8000/api/v1/extractions
-   php -r 'echo json_decode(file_get_contents("/tmp/out.json"), true)["status"], PHP_EOL;'
+   php -r '$d = json_decode(file_get_contents("/tmp/out.json"), true); $s = is_array($d) ? ($d["status"] ?? null) : null; if ($s !== "accepted_for_review") { fwrite(STDERR, "FAIL: status missing or unexpected\n"); exit(1); } echo $s, PHP_EOL;'
    ```
 
-   Expected: `curl` exits 0 and prints `201`; the status command prints `accepted_for_review`.
+   Expected: `curl` exits 0 and prints `201`; the status command prints `accepted_for_review` and exits 0. Otherwise it prints `FAIL: status missing or unexpected` to stderr and exits 1; stop.
 
    Non-order:
 
    ```bash
    curl --disable -sS -o /tmp/out.json -w '%{http_code}\n' -H "Authorization: Bearer $INTAKE_TOKEN" -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary @/tmp/req_reject.json http://127.0.0.1:8000/api/v1/extractions
-   php -r 'echo json_decode(file_get_contents("/tmp/out.json"), true)["status"], PHP_EOL;'
+   php -r '$d = json_decode(file_get_contents("/tmp/out.json"), true); $s = is_array($d) ? ($d["status"] ?? null) : null; if ($s !== "rejected_by_model") { fwrite(STDERR, "FAIL: status missing or unexpected\n"); exit(1); } echo $s, PHP_EOL;'
    ```
 
-   Expected: `curl` exits 0 and prints `201`; the status command prints `rejected_by_model`.
+   Expected: `curl` exits 0 and prints `201`; the status command prints `rejected_by_model` and exits 0. Otherwise it prints `FAIL: status missing or unexpected` to stderr and exits 1; stop.
 
    Unknown SKU defect:
 
    ```bash
    curl --disable -sS -o /tmp/out.json -w '%{http_code}\n' -H "Authorization: Bearer $INTAKE_TOKEN" -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary @/tmp/req_defect.json http://127.0.0.1:8000/api/v1/extractions
-   php -r 'echo json_decode(file_get_contents("/tmp/out.json"), true)["status"], PHP_EOL;'
-   php -r 'echo in_array("sku_unknown", array_column(json_decode(file_get_contents("/tmp/out.json"), true)["errors"], "code"), true) ? "sku_unknown found" : "sku_unknown missing", PHP_EOL;'
+   php -r '$d = json_decode(file_get_contents("/tmp/out.json"), true); $s = is_array($d) ? ($d["status"] ?? null) : null; if ($s !== "rejected_by_validation") { fwrite(STDERR, "FAIL: status missing or unexpected\n"); exit(1); } echo $s, PHP_EOL;'
+   php -r '$d = json_decode(file_get_contents("/tmp/out.json"), true); $e = is_array($d) ? ($d["errors"] ?? null) : null; if (!is_array($e) || !in_array("sku_unknown", array_column($e, "code"), true)) { fwrite(STDERR, "FAIL: sku_unknown missing\n"); exit(1); } echo "sku_unknown found", PHP_EOL;'
    ```
 
-   Expected: `curl` exits 0 and prints `201`; the status command prints `rejected_by_validation`; the final command prints `sku_unknown found`.
+   Expected: `curl` exits 0 and prints `201`; the status command prints `rejected_by_validation` and exits 0; the final command prints `sku_unknown found` and exits 0. If either check fails, it prints its fixed `FAIL:` message to stderr, exits 1, and you stop.
 
 10. Repeat the valid request without an authorization header:
 
@@ -122,10 +122,10 @@ Run steps 1–5 and 7–12 in the first terminal. Step 6 runs in a second termin
 12. Read the latest stored run without Tinker:
 
     ```bash
-    php -r '$p = new PDO("sqlite:database/database.sqlite"); foreach ($p->query("SELECT id, request_id, status, errors FROM extraction_runs ORDER BY created_at DESC, id DESC LIMIT 1", PDO::FETCH_ASSOC) as $r) { echo json_encode($r), PHP_EOL; }'
+    php -r '$p = new PDO("sqlite:database/database.sqlite"); $r = $p->query("SELECT id, request_id, status, errors FROM extraction_runs ORDER BY created_at DESC, id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC); if (!$r || $r["status"] !== "rejected_by_validation") { fwrite(STDERR, "FAIL: latest run missing or unexpected\n"); exit(1); } echo json_encode($r), PHP_EOL;'
     ```
 
-    Expected: exit 0 and one JSON record for the most recent run. Record the status; do not include real data.
+    Expected: exit 0 and one JSON record for the latest `rejected_by_validation` run. Otherwise stderr prints `FAIL: latest run missing or unexpected` and the command exits 1; stop. Record the status; do not include real data.
 
 13. Stop the server with **Ctrl+C** in the second terminal. In GitHub Codespaces, open the Codespaces menu and choose **Stop Current Codespace**. Stop it; do not delete it.
 
